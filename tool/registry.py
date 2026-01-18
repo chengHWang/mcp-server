@@ -2,9 +2,11 @@
 from typing import Dict
 from .base import BaseTool
 from .add import AddTool
+from .count_down import CountdownTool
 
 TOOL_REGISTRY: Dict[str, BaseTool] = {
     "add": AddTool(),
+    "count_down": CountdownTool(),
 }
 
 def get_tool(name: str):

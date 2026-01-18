@@ -1,31 +1,54 @@
 # mng/server.py
-from fastapi import FastAPI, Request
+import json
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
-from .handlers import handle_list_tools, handle_call_tool
+from fastapi.responses import StreamingResponse
+from sse_starlette.sse import EventSourceResponse
+
+from .handlers import handle_list_tools, handle_async_call_tool
 
 app = FastAPI(title="MCP Server")
 
-
-@app.post("/mcp")
-async def mcp_endpoint(request: Request):
+@app.get("/")
+async def root(request: Request):
     body = await request.json()
     method = body.get("method")
 
     if method == "list_tools":
-        data = await handle_list_tools()
-        return JSONResponse({
+        result = await handle_list_tools()
+        return {
             "jsonrpc": "2.0",
-            "result": data,
-            "id": body.get("id")
-        })
-
-    elif method == "call_tool":
-        response = await handle_call_tool(body)
-        return JSONResponse(response)
-
+            "result": result,
+            "id": body.get("id"),
+        }
     else:
-        return JSONResponse({
-            "jsonrpc": "2.0",
-            "error": {"code": -32601, "message": "Method not found"},
-            "id": body.get("id")
-        }, status_code=400)
+        raise HTTPException(status_code=404, detail=f"Illegal method '{method}' requested in route path '/'.")
+
+
+@app.post("/sse")
+async def sse_mcp(request: Request):
+    body = await request.json()
+    method = body.get("method")
+
+    if method != "call_tool":
+        raise HTTPException(
+            status_code=404,
+            detail=f"Illegal method '{method}' requested in route path '/sse'",
+        )
+
+    session_id = request.headers.get("x-mcp-sessionid")
+    async def sse_generator():
+        try:
+            async for response in handle_async_call_tool(body, session_id):
+                yield {
+                    "data": json.dumps(response, ensure_ascii=False),
+                }
+        except Exception as e:
+            err_resp = {
+                "jsonrpc": "2.0",
+                "error": {"code": 500, "message": str(e)},
+                "id": body.get("id"),
+            }
+            yield {"data": json.dumps(err_resp, ensure_ascii=False)}
+
+    return EventSourceResponse(sse_generator())
