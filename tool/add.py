@@ -2,6 +2,7 @@
 from typing import Dict, Any, AsyncGenerator
 from .base import BaseTool
 
+
 class AddTool(BaseTool):
     name = "add"
     description = "Add two numbers together."
@@ -19,6 +20,7 @@ class AddTool(BaseTool):
         b = arguments["b"]
         result = a + b
         yield {"final": result}
+
 
 if __name__ == "__main__":
     import asyncio
