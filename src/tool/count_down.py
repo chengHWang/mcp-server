@@ -2,7 +2,13 @@ import asyncio
 from typing import AsyncGenerator, Dict, Any
 
 class CountdownTool:
-    name = "countdown"  # 工具名称，用于注册和调用
+    name = "count_down"
+    description = "Count down tool"
+    parameters = {
+        "type": "object",
+        "properties": {},
+        "required": [],
+    }
 
     async def __call__(
         self,

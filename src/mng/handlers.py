@@ -1,6 +1,6 @@
 # mng/handlers.py
 from typing import Optional, Dict, Any
-from tool.registry import get_tool, list_tools_metadata
+from src.tool.registry import get_tool, list_tools_metadata
 
 async def handle_list_tools():
     return {"tools": list_tools_metadata()}
